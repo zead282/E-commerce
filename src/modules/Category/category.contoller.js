@@ -73,3 +73,21 @@ export const gettcategorys=async(req,res,next)=>{
     res.json({message:"categorys and sub categories",data:categories});
 }
 
+///delete category
+
+export const deletecategory=async(req,res,next)=>{
+
+    const{categoryid}=req.params
+
+    const iscategory=await categoryModel.findByIdAndDelete(categoryid)
+
+    if(!iscategory) return next(Error('category not found'))
+    
+    const folderr=`${process.env.MAIN_FOLDER}/categories/${iscategory.folder_id}`    
+
+    await cloudinaryConnection().api.delete_resources_by_prefix(folderr)
+    await cloudinaryConnection().api.delete_folder(folderr);
+    
+    res.status(200)
+
+}

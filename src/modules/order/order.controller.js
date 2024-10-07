@@ -2,6 +2,7 @@
 import {couponValidation} from '../../utils/coupon-validation.js'
 import orderModel from '../../../DB/Models/order.model.js'
 import {checkproductavailability} from '../Cart/utils/check-product-in-db.js'
+import { DateTime } from 'luxon'
 import CouponUsers from'../../../DB/Models/coupon-users.model.js'
 import {qrCodeGeneration} from '../../utils/qr-code.js'
 import {getusercart} from '../Cart/utils/get-user-cart.js'
@@ -264,4 +265,39 @@ export const payWithStripe = async (req, res, next) => {
     await order.save();
 
     res.status(200).json({checkoutSession , paymentIntent});
+}
+
+
+//====================== apply webhook locally to confirm the  order =======================//
+export const stripeWebhookLocal  =  async (req,res,next) => {
+    const orderId = req.body.data.object.metadata.orderId
+
+    const confirmedOrder  = await orderModel.findById(orderId )
+    if(!confirmedOrder) return next({message: 'Order not found', cause: 404});
+    
+    await confirmPaymentIntent( {paymentIntentId: confirmedOrder.payment_intent} );
+
+    confirmedOrder.isPaid = true;
+    confirmedOrder.paidAt = DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss');
+    confirmedOrder.orderStatus = 'Paid';
+
+    await confirmedOrder.save();
+
+    res.status(200).json({message: 'webhook received'});
+}
+
+
+export const refundOrder = async (req, res, next) => {
+    const{orderId} = req.params; 
+
+    const findOrder = await orderModel.findOne({_id: orderId, orderStatus: 'Paid'});
+    if(!findOrder) return next({message: 'Order not found or cannot be refunded', cause: 404});
+
+    // refund the payment intent
+    const refund = await refundPaymentIntent({paymentIntentId: findOrder.payment_intent});
+
+    findOrder.orderStatus = 'Refunded';
+    await findOrder.save();
+
+    res.status(200).json({message: 'Order refunded successfully', order: refund});
 }

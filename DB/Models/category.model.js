@@ -1,5 +1,5 @@
 
-import { Schema, Types, model } from "mongoose";
+import mongoose, { Schema, Types, model } from "mongoose";
 
 
 const categoryschema=new Schema({
@@ -20,6 +20,31 @@ categoryschema.virtual('subcategories',{
     ref:'Subcategory',
     localField:'_id',
     foreignField:'categoryid'
+})
+
+
+///hook
+
+categoryschema.post("findOneAndDelete",async function() {
+    const _id=this.getQuery()._id
+
+    const deletesubcategory=await mongoose.models.Subcategory.deleteMany({
+        categoryid:_id
+    })
+
+    if(deletesubcategory.deletedCount){
+        const deletedbrands=await mongoose.models.Brand.deleteMany({
+            categoryid:_id
+        })
+     
+    if(deletedbrands.deletedCount)
+        {
+            const deleteproduct=await mongoose.models.Product.deleteMany({
+                categoryid:_id
+            })
+        }    
+
+    }
 })
 
 export default model('Category',categoryschema)

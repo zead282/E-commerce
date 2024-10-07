@@ -30,6 +30,10 @@ export const initiateApp = (app, express) => {
     app.use('/coupon',routers.couponrouter)
     app.use('/order',routers.orderrouter)
 
+    app.use('*',(req,res,next)=>{
+        res.status(404).json({message:"notfound"})
+    })
+
     app.use(globalResponse,rollbackuploadfiles,rollbacksaveddocuments)
     scheduleCronsForCouponCheck()
     scheduleCronsForCouponCheck2()

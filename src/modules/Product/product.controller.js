@@ -137,3 +137,28 @@ export const getallproducts=async(req,res,next)=>{
 
    res.status(202).json({message:"products",products})
 }
+
+
+export const deleteproduct=async(req,res,next)=>{
+
+   const{productid}=req.params
+
+   ///check on product
+
+   const isproduct=await productmodel.findById(productid);
+
+   if(!isproduct) return next(Error('product not available'));
+   
+    let publicids=[]
+
+   const folderr= isproduct.Images[0].public_id.split(`${isproduct.folder_id}/`)[0] + isproduct.folder_id
+  
+   
+   await cloudinaryConnection().api.delete_resources_by_prefix(folderr)
+   await cloudinaryConnection().api.delete_folder(folderr)
+
+   const delete_product=await productmodel.findByIdAndDelete(productid)
+
+   res.status(200).json('deleted')
+
+}

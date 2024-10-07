@@ -15,4 +15,6 @@ expressAsyncHandler(productcontroller.updatedproduct))
 
 
 router.get('/',expressAsyncHandler(productcontroller.getallproducts))
+
+router.delete('/delete/:productid',auth(endPointsRoles.delete_PRODUCT),expressAsyncHandler(productcontroller.deleteproduct))
 export default router;
